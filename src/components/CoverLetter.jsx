@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { generateCoverLetter } from "../lib/api.js";
 import { downloadText } from "../lib/report.js";
+import { Mail, Download, Wand2 } from "lucide-react";
 import CopyButton from "./CopyButton.jsx";
 
 const TONES = [
@@ -44,10 +45,10 @@ export default function CoverLetter({ resume, jobDescription, provider = "auto" 
   const loading = status === "loading";
 
   return (
-    <section className="card cover-letter" aria-labelledby="cl-title">
+    <section className="card cover-letter span-2" aria-labelledby="cl-title">
       <div className="cover-letter__head">
         <div>
-          <h3 id="cl-title" className="card__title">Cover letter</h3>
+          <h3 id="cl-title" className="card__title"><Mail size={18} aria-hidden="true" /> Cover letter</h3>
           <p className="muted small">
             A first draft built only from your resume. Check every claim and fill in any [placeholders].
           </p>
@@ -75,10 +76,10 @@ export default function CoverLetter({ resume, jobDescription, provider = "auto" 
             <>
               <span className="spinner" aria-hidden="true" /> Writing…
             </>
-          ) : letter ? (
-            "Regenerate"
           ) : (
-            "Generate cover letter"
+            <>
+              <Wand2 size={14} aria-hidden="true" /> {letter ? "Regenerate" : "Generate cover letter"}
+            </>
           )}
         </button>
       </div>
@@ -103,7 +104,7 @@ export default function CoverLetter({ resume, jobDescription, provider = "auto" 
                 className="btn btn--ghost btn--small"
                 onClick={() => downloadText("cover-letter.txt", letter, "text/plain")}
               >
-                Download .txt
+                <Download size={14} aria-hidden="true" /> Download .txt
               </button>
             </div>
           )}

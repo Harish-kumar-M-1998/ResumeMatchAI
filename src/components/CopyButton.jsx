@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Check, Copy } from "lucide-react";
 import { copyText } from "../lib/report.js";
 
 export default function CopyButton({ text, label = "Copy", doneLabel = "Copied", className = "", disabled = false }) {
@@ -21,6 +22,7 @@ export default function CopyButton({ text, label = "Copy", doneLabel = "Copied",
       onClick={copy}
       disabled={disabled}
     >
+      {copied ? <Check size={14} aria-hidden="true" /> : <Copy size={14} aria-hidden="true" />}
       {copied ? doneLabel : label}
       <span className="sr-only" aria-live="polite">
         {copied ? " to clipboard" : ""}

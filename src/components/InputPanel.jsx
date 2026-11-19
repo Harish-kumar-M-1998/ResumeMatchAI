@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { FileText, Briefcase, Upload } from "lucide-react";
 
 
 function Counter({ length, min, max }) {
@@ -56,13 +57,18 @@ export default function InputPanel({
   return (
     <div className="panel">
       <div className="panel__head">
-        <div>
+        <div className="panel__title">
+          <span className="panel__icon" aria-hidden="true">
+            {allowPdf ? <FileText size={18} /> : <Briefcase size={18} />}
+          </span>
+          <div>
           <label htmlFor={id} className="panel__label">
             {label}
           </label>
           <p className="panel__desc" id={`${id}-desc`}>
             {description}
           </p>
+          </div>
         </div>
         {allowPdf && (
           <>
@@ -81,6 +87,7 @@ export default function InputPanel({
               onClick={() => fileRef.current?.click()}
               disabled={disabled || pdfState.loading}
             >
+              <Upload size={14} aria-hidden="true" />
               {pdfState.loading ? "Reading PDF…" : "Upload PDF"}
             </button>
           </>

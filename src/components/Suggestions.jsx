@@ -1,10 +1,12 @@
+import { Lightbulb, Flag, ScanLine } from "lucide-react";
+
 export default function Suggestions({ suggestions, redFlags, atsIssues, streaming = false }) {
   const pending = (label) => <p className="muted">{streaming ? "Writing…" : label}</p>;
 
   return (
     <>
-      <section className="card" aria-labelledby="sg-title">
-        <h3 id="sg-title" className="card__title">Top suggestions</h3>
+      <section className="card span-2" aria-labelledby="sg-title">
+        <h3 id="sg-title" className="card__title"><Lightbulb size={18} aria-hidden="true" /> Top suggestions</h3>
         {suggestions.length ? (
           <ol className="suggestions">
             {suggestions.map((s, i) => (
@@ -16,10 +18,10 @@ export default function Suggestions({ suggestions, redFlags, atsIssues, streamin
         )}
       </section>
 
-      <div className="grid-2">
+      <div className="grid-2 span-2">
         <section className="card card--flags" aria-labelledby="rf-title">
           <h3 id="rf-title" className="card__title">
-            <span aria-hidden="true">⚑ </span>Red flags
+            <Flag size={18} aria-hidden="true" /> Red flags
           </h3>
           {redFlags.length ? (
             <ul className="flags">
@@ -33,7 +35,7 @@ export default function Suggestions({ suggestions, redFlags, atsIssues, streamin
         </section>
 
         <section className="card" aria-labelledby="ats-title">
-          <h3 id="ats-title" className="card__title">ATS issues</h3>
+          <h3 id="ats-title" className="card__title"><ScanLine size={18} aria-hidden="true" /> ATS issues</h3>
           {atsIssues.length ? (
             <ul className="issues">
               {atsIssues.map((f, i) => (

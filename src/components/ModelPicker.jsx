@@ -1,3 +1,5 @@
+import { Sparkles, Zap, Gem, Bot } from "lucide-react";
+
 const AUTO = {
   id: "auto",
   label: "Auto",
@@ -5,7 +7,7 @@ const AUTO = {
   description: "Uses the fastest available model and switches to the other automatically if it's busy or fails.",
 };
 
-const ICONS = { auto: "✦", groq: "⚡", gemini: "◆" };
+const ICONS = { auto: Sparkles, groq: Zap, gemini: Gem };
 
 /**
  * Lets the user choose which AI analyzes their resume.
@@ -19,6 +21,7 @@ export default function ModelPicker({ providers, value, onChange, disabled = fal
       <legend className="model-picker__legend">AI model</legend>
       <div className="model-picker__options">
         {options.map((p) => {
+          const Icon = ICONS[p.id] || Bot;
           const checked = options.length === 1 || value === p.id;
           return (
             <label key={p.id} className={`model-option ${checked ? "is-active" : ""}`}>
@@ -30,7 +33,7 @@ export default function ModelPicker({ providers, value, onChange, disabled = fal
                 onChange={() => onChange(p.id)}
               />
               <span className="model-option__icon" aria-hidden="true">
-                {ICONS[p.id] || "●"}
+                <Icon size={17} />
               </span>
               <span className="model-option__body">
                 <span className="model-option__title">

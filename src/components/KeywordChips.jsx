@@ -1,3 +1,4 @@
+import { Tags } from "lucide-react";
 import CopyButton from "./CopyButton.jsx";
 
 export default function KeywordChips({ matched, missing }) {
@@ -8,7 +9,7 @@ export default function KeywordChips({ matched, missing }) {
 
   return (
     <section className="card" aria-labelledby="kw-title">
-      <h3 id="kw-title" className="card__title">Keywords</h3>
+      <h3 id="kw-title" className="card__title"><Tags size={18} aria-hidden="true" /> Keywords</h3>
 
       <div className="kw-group">
         <h4 className="kw-group__title">

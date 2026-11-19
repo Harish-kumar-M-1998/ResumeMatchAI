@@ -1,3 +1,4 @@
+import { Download, Printer, RotateCcw } from "lucide-react";
 import { downloadText, reportToMarkdown } from "../lib/report.js";
 
 export default function ReportActions({ report, onReset }) {
@@ -9,7 +10,7 @@ export default function ReportActions({ report, onReset }) {
   return (
     <div className="report-actions no-print">
       <button type="button" className="btn btn--ghost btn--small" onClick={downloadMarkdown}>
-        Download .md
+        <Download size={14} aria-hidden="true" /> Download .md
       </button>
       <button
         type="button"
@@ -17,10 +18,10 @@ export default function ReportActions({ report, onReset }) {
         onClick={() => window.print()}
         title="Opens the print dialog — choose “Save as PDF”"
       >
-        Save as PDF
+        <Printer size={14} aria-hidden="true" /> Save as PDF
       </button>
       <button type="button" className="btn btn--ghost btn--small" onClick={onReset}>
-        Start over
+        <RotateCcw size={14} aria-hidden="true" /> Start over
       </button>
     </div>
   );

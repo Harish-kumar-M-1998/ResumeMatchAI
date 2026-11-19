@@ -1,10 +1,11 @@
+import { PenLine } from "lucide-react";
 import CopyButton from "./CopyButton.jsx";
 
 export default function BulletRewrites({ rewrites }) {
   if (!rewrites.length) return null;
   return (
-    <section className="card" aria-labelledby="br-title">
-      <h3 id="br-title" className="card__title">Bullet rewrites</h3>
+    <section className="card span-2" aria-labelledby="br-title">
+      <h3 id="br-title" className="card__title"><PenLine size={18} aria-hidden="true" /> Bullet rewrites</h3>
       <p className="muted small">
         Placeholders like <code>[X%]</code> mark where a real number from your work would make the bullet stronger.
       </p>

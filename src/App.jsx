@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import { motion } from "motion/react";
+import { Sparkles, Gauge, ScanSearch, PenLine, Mail, ShieldCheck, Code2, ArrowRight, FlaskConical } from "lucide-react";
 import InputPanel from "./components/InputPanel.jsx";
 import ModelPicker from "./components/ModelPicker.jsx";
 import Results from "./components/Results.jsx";
@@ -10,6 +12,18 @@ import { SAMPLE_RESUME, SAMPLE_JD } from "./lib/sample.js";
 const RESUME_LIMITS = { min: 200, max: 15000 };
 const JD_LIMITS = { min: 100, max: 10000 };
 const STATUS_MESSAGES = ["Reading your resume…", "Comparing with the job…", "Checking ATS rules…"];
+const FEATURES = [
+  { icon: Gauge, title: "Match & ATS scores", text: "Two 0–100 scores with a one-line verdict." },
+  { icon: ScanSearch, title: "Keyword gaps", text: "Critical vs nice-to-have, copy all in one click." },
+  { icon: PenLine, title: "Bullet rewrites", text: "Weak bullets rewritten with the reason why." },
+  { icon: Mail, title: "Cover letter", text: "A tailored draft in the tone you choose." },
+  {
+    icon: Sparkles,
+    title: "Pick your AI",
+    text: "Groq for speed, Gemini for depth, or Auto with fallback. Results stream in live.",
+    wide: true,
+  },
+];
 const PROVIDER_STORAGE_KEY = "resumematch:provider";
 
 const prefersReducedMotion = () => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -184,28 +198,82 @@ export default function App() {
 
       <a className="skip-link" href="#main">Skip to content</a>
       <header className="site-header">
-        <div className="wrap site-header__inner glass">
+        <div className="wrap">
+          <div className="site-header__inner glass">
           <div className="brand">
             <img src="/favicon.svg" alt="" width="34" height="34" />
             <span className="brand__name">
               ResumeMatch <em>AI</em>
             </span>
           </div>
-          <p className="tagline">See your resume the way a recruiter — and their ATS — will.</p>
+          <div className="header-right">
+            <p className="tagline">See your resume the way a recruiter — and their ATS — will.</p>
+            <a
+              className="btn btn--ghost btn--small"
+              href="https://github.com/Harish-kumar-M-1998/ResumeMatchAI"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <Code2 size={16} aria-hidden="true" /> Source
+            </a>
+          </div>
+          </div>
         </div>
       </header>
 
       <main id="main" className={`wrap workspace ${split ? "is-split" : ""}`}>
         {!split && (
           <section className="hero">
-            <p className="eyebrow">Free · No sign-up · Nothing stored</p>
-            <h1>
-              How well does your resume <span className="hl">fit this job?</span>
-            </h1>
-            <p className="lede">
-              Paste your resume and a job description. Get a match score, ATS check, missing keywords, rewritten
-              bullets and a tailored cover letter — streamed live as the AI writes.
-            </p>
+            <motion.div
+              className="hero__copy"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+            >
+              <p className="eyebrow">
+                <span className="eyebrow__dot" aria-hidden="true" />
+                Free · No sign-up · Nothing stored
+              </p>
+              <h1>
+                How well does your resume <span className="hl">fit this job?</span>
+              </h1>
+              <p className="lede">
+                Paste your resume and a job description. Get a match score, ATS check, missing keywords, rewritten
+                bullets and a tailored cover letter — streamed live as the AI writes.
+              </p>
+              <div className="hero__stats">
+                <div className="hero__stat">
+                  <strong>~5s</strong>
+                  <span>to a full report</span>
+                </div>
+                <div className="hero__stat">
+                  <strong>2</strong>
+                  <span>scores: match + ATS</span>
+                </div>
+                <div className="hero__stat">
+                  <strong>0</strong>
+                  <span>data stored</span>
+                </div>
+              </div>
+            </motion.div>
+
+            <ul className="bento" aria-label="What you get">
+              {FEATURES.map((f, i) => (
+                <motion.li
+                  key={f.title}
+                  className={`bento__tile glass ${f.wide ? "bento__tile--wide" : ""}`}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.45, delay: 0.1 + i * 0.07, ease: "easeOut" }}
+                >
+                  <span className="bento__icon" aria-hidden="true">
+                    <f.icon size={19} />
+                  </span>
+                  <h3>{f.title}</h3>
+                  <p>{f.text}</p>
+                </motion.li>
+              ))}
+            </ul>
           </section>
         )}
 
@@ -249,6 +317,7 @@ export default function App() {
             />
           </div>
 
+          <div className="form__side">
           <ModelPicker providers={providers} value={provider} onChange={chooseProvider} disabled={loading} />
 
           <div className="actions">
@@ -257,15 +326,16 @@ export default function App() {
                 <>
                   <span className="spinner" aria-hidden="true" /> Analyzing…
                 </>
-              ) : split ? (
-                "Re-analyze"
               ) : (
-                "Analyze match"
+                <>
+                  <Sparkles size={18} aria-hidden="true" /> {split ? "Re-analyze" : "Analyze match"}
+                  {!split && <ArrowRight size={18} aria-hidden="true" />}
+                </>
               )}
             </button>
             {!split && (
               <button type="button" className="btn btn--ghost" onClick={fillSample} disabled={loading}>
-                Try with sample data
+                <FlaskConical size={16} aria-hidden="true" /> Try with sample data
               </button>
             )}
             <p id="submit-hint" className="actions__hint">
@@ -295,6 +365,7 @@ export default function App() {
               )}
             </div>
           )}
+          </div>
         </form>
 
         {report && (
@@ -314,7 +385,10 @@ export default function App() {
 
       <footer className="site-footer">
         <div className="wrap">
-          <p>Your data is sent to an AI for analysis and is not stored.</p>
+          <p>
+            <ShieldCheck size={15} aria-hidden="true" style={{ verticalAlign: "-2px", marginRight: 6 }} />
+            Your data is sent to an AI for analysis and is not stored.
+          </p>
           <p className="muted small">AI feedback can be wrong — always review suggestions before using them.</p>
         </div>
       </footer>

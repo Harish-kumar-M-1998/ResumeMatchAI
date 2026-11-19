@@ -1,4 +1,5 @@
 import { forwardRef } from "react";
+import { motion } from "motion/react";
 import ScoreRing from "./ScoreRing.jsx";
 import KeywordChips from "./KeywordChips.jsx";
 import SectionFeedback from "./SectionFeedback.jsx";
@@ -39,7 +40,12 @@ const Results = forwardRef(function Results(
         {!streaming && <ReportActions report={report} onReset={onReset} />}
       </div>
 
-      <div className="card scores">
+      <motion.div
+        className="card scores"
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
         <div className="scores__rings">
           {report.match_score !== null ? (
             <ScoreRing score={report.match_score} label="Job match" caption="How well you fit this role" />
@@ -53,7 +59,9 @@ const Results = forwardRef(function Results(
           )}
         </div>
         {report.verdict && <p className="verdict">{report.verdict}</p>}
-      </div>
+      </motion.div>
+
+      <div className="results__grid">
 
       {(hasKeywords || !streaming) && (
         <KeywordChips matched={report.matched_keywords} missing={report.missing_keywords} />
@@ -74,6 +82,12 @@ const Results = forwardRef(function Results(
       {!streaming && (
         <>
           <CoverLetter resume={resume} jobDescription={jobDescription} provider={provider} />
+        </>
+      )}
+      </div>
+
+      {!streaming && (
+        <>
           <div className="results__foot no-print">
             <button type="button" className="btn btn--primary" onClick={onReset}>
               Start over

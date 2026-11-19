@@ -1,3 +1,5 @@
+import { ListChecks } from "lucide-react";
+
 const SECTIONS = [
   { key: "summary", label: "Summary" },
   { key: "experience", label: "Experience" },
@@ -11,7 +13,7 @@ export default function SectionFeedback({ feedback }) {
   if (!rows.length) return null;
   return (
     <section className="card" aria-labelledby="sf-title">
-      <h3 id="sf-title" className="card__title">Section-by-section feedback</h3>
+      <h3 id="sf-title" className="card__title"><ListChecks size={18} aria-hidden="true" /> Section-by-section feedback</h3>
       <dl className="sections">
         {rows.map(({ key, label }) => (
           <div key={key} className="sections__row">
