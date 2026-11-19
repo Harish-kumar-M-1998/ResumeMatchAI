@@ -1,7 +1,7 @@
 // ResumeMatch AI – serverless analysis endpoint.
 // The Gemini API key is read ONLY here, from process.env. It never reaches the browser.
 
-const DEFAULT_MODEL = "gemini-2.5-flash";
+const DEFAULT_MODEL = "gemini-flash-latest";
 const LLM_TIMEOUT_MS = 25_000;
 
 const LIMITS = {

@@ -118,7 +118,7 @@ Open **http://localhost:8888**.
    - `NETLIFY_SITE_ID`: the Site ID from step 4
 7. **Add Netlify environment variables.** In Netlify → *Site configuration → Environment variables*, add:
    - `GEMINI_API_KEY`: your Gemini key (required)
-   - `GEMINI_MODEL`: optional, defaults to `gemini-2.5-flash`
+   - `GEMINI_MODEL`: optional, defaults to `gemini-flash-latest`
 
    The Gemini key goes in **Netlify, not GitHub**, because the function runs on Netlify.
 8. **Deploy.** Push to `main`, watch the **Actions** tab, then open your `https://<site>.netlify.app` URL. Pull requests to `main` get a draft preview deploy, and its URL is posted on the PR.
