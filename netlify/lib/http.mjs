@@ -11,8 +11,8 @@ export function errorResponse(status, message, code, extraHeaders) {
   return json(status, { error: { message, code } }, extraHeaders);
 }
 
-export function methodNotAllowed() {
-  return errorResponse(405, "Method not allowed. Use POST.", "METHOD_NOT_ALLOWED", { Allow: "POST" });
+export function methodNotAllowed(allowed = "POST") {
+  return errorResponse(405, `Method not allowed. Use ${allowed}.`, "METHOD_NOT_ALLOWED", { Allow: allowed });
 }
 
 export function getClientIp(req, context) {

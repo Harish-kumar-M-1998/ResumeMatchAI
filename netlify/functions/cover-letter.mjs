@@ -3,7 +3,7 @@ import { errorResponse, getClientIp, methodNotAllowed, ndjsonStream } from "../l
 import { createRateLimiter } from "../lib/rateLimit.mjs";
 import { validateInputs } from "../lib/validate.mjs";
 import { buildCoverLetterPrompt, TONES } from "../lib/prompts.mjs";
-import { configuredProviders } from "../lib/providers.mjs";
+import { configuredProviders, parseChoice, PROVIDERS } from "../lib/providers.mjs";
 import { runWithFallback } from "../lib/runLlm.mjs";
 
 // Best-effort in-memory limit (resets on cold start), see analyze.mjs.
@@ -32,7 +32,15 @@ export default async function handler(req, context) {
 
   const tone = Object.hasOwn(TONES, body?.tone) ? body.tone : "professional";
 
-  const providers = configuredProviders();
+  const choice = parseChoice(body?.provider);
+  const providers = configuredProviders(process.env, choice);
+  if (!providers.length && choice !== "auto") {
+    return errorResponse(
+      400,
+      `${PROVIDERS[choice].label} isn't available on this site right now. Choose "Auto" or another AI model.`,
+      "PROVIDER_UNAVAILABLE"
+    );
+  }
   if (!providers.length) {
     console.error("[cover-letter] No LLM API key is configured");
     return errorResponse(
@@ -56,7 +64,7 @@ export default async function handler(req, context) {
         return letter;
       },
     });
-    if (outcome.ok) send({ type: "result", letter: outcome.result, provider: outcome.provider });
+    if (outcome.ok) send({ type: "result", letter: outcome.result, provider: outcome.provider, model: outcome.model });
     else send({ type: "error", code: outcome.code, message: outcome.message });
   });
 }

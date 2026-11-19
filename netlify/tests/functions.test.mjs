@@ -155,3 +155,40 @@ describe("cover-letter function", () => {
     expect(res.status).toBe(400);
   });
 });
+
+describe("provider choice", () => {
+  it("lists only configured providers, without keys", async () => {
+    const { default: providers } = await import("../functions/providers.mjs");
+    vi.stubEnv("GEMINI_API_KEY", "secret-gemini");
+    const res = await providers(new Request("http://x/", { method: "GET" }));
+    const body = await res.json();
+    expect(body.providers.map((p) => p.id)).toEqual(["gemini"]);
+    expect(body.providers[0]).toHaveProperty("description");
+    expect(JSON.stringify(body)).not.toContain("secret");
+    expect((await providers(new Request("http://x/", { method: "POST" }))).status).toBe(405);
+  });
+
+  it("uses only the pinned provider (no fallback) and reports the model", async () => {
+    vi.stubEnv("GROQ_API_KEY", "q");
+    vi.stubEnv("GEMINI_API_KEY", "g");
+    const fetchMock = vi.fn(async () => sseResponse([geminiChunk(JSON.stringify(SAMPLE_REPORT))]));
+    vi.stubGlobal("fetch", fetchMock);
+    const events = await readEvents(await analyze(post({ ...VALID_BODY, provider: "gemini" }), ctx()));
+    expect(fetchMock.mock.calls.every(([url]) => url.includes("googleapis"))).toBe(true);
+    expect(events.at(-1)).toMatchObject({ type: "result", provider: "gemini", model: "gemini-flash-latest" });
+  });
+
+  it("returns 400 when the pinned provider has no key", async () => {
+    vi.stubEnv("GEMINI_API_KEY", "g");
+    const res = await analyze(post({ ...VALID_BODY, provider: "groq" }), ctx());
+    expect(res.status).toBe(400);
+    expect((await res.json()).error.code).toBe("PROVIDER_UNAVAILABLE");
+  });
+
+  it("treats unknown choices as auto", async () => {
+    vi.stubEnv("GEMINI_API_KEY", "g");
+    vi.stubGlobal("fetch", vi.fn(async () => sseResponse([geminiChunk(JSON.stringify(SAMPLE_REPORT))])));
+    const events = await readEvents(await analyze(post({ ...VALID_BODY, provider: "evil" }), ctx()));
+    expect(events.at(-1).type).toBe("result");
+  });
+});

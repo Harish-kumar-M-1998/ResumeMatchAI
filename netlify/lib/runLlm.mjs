@@ -40,7 +40,7 @@ export async function runWithFallback({ providers, prompt, json, send, finalize,
         send({ type: "delta", text: chunk });
       }
       const result = finalize(text);
-      return { ok: true, result, provider: provider.name };
+      return { ok: true, result, provider: provider.name, model: provider.model };
     } catch (err) {
       console.error(
         `[llm] ${provider.name} (${provider.model}) failed:`,

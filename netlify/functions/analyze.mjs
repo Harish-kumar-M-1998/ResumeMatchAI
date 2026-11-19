@@ -5,7 +5,7 @@ import { createRateLimiter } from "../lib/rateLimit.mjs";
 import { validateInputs } from "../lib/validate.mjs";
 import { buildAnalysisPrompt } from "../lib/prompts.mjs";
 import { parseReport } from "../lib/normalize.mjs";
-import { configuredProviders } from "../lib/providers.mjs";
+import { configuredProviders, parseChoice, PROVIDERS } from "../lib/providers.mjs";
 import { runWithFallback } from "../lib/runLlm.mjs";
 
 // 10 requests per IP per 10 minutes. In-memory, so best-effort only: counters
@@ -33,7 +33,15 @@ export default async function handler(req, context) {
   const input = validateInputs(body);
   if (!input.ok) return errorResponse(400, input.message, input.code);
 
-  const providers = configuredProviders();
+  const choice = parseChoice(body?.provider);
+  const providers = configuredProviders(process.env, choice);
+  if (!providers.length && choice !== "auto") {
+    return errorResponse(
+      400,
+      `${PROVIDERS[choice].label} isn't available on this site right now. Choose "Auto" or another AI model.`,
+      "PROVIDER_UNAVAILABLE"
+    );
+  }
   if (!providers.length) {
     console.error("[analyze] No LLM API key is configured (GROQ_API_KEY / GEMINI_API_KEY)");
     return errorResponse(
@@ -53,7 +61,7 @@ export default async function handler(req, context) {
       send,
       finalize: parseReport, // throws on invalid JSON → next provider
     });
-    if (outcome.ok) send({ type: "result", report: outcome.result, provider: outcome.provider });
+    if (outcome.ok) send({ type: "result", report: outcome.result, provider: outcome.provider, model: outcome.model });
     else send({ type: "error", code: outcome.code, message: outcome.message });
   });
 }

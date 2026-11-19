@@ -5,6 +5,8 @@
 export const PROVIDERS = {
   groq: {
     label: "Groq",
+    tagline: "Fastest",
+    description: "Open models (Llama) on Groq's custom inference chips. Usually answers in a few seconds.",
     keyVar: "GROQ_API_KEY",
     modelVar: "GROQ_MODEL",
     defaultModel: "llama-3.3-70b-versatile",
@@ -14,6 +16,8 @@ export const PROVIDERS = {
   },
   gemini: {
     label: "Gemini",
+    tagline: "Google",
+    description: "Google's Flash model. Detailed, nuanced feedback; can be a little slower.",
     keyVar: "GEMINI_API_KEY",
     modelVar: "GEMINI_MODEL",
     defaultModel: "gemini-flash-latest",
@@ -24,11 +28,29 @@ export const PROVIDERS = {
 
 const DEFAULT_ORDER = ["groq", "gemini"];
 
+export const PROVIDER_CHOICES = ["auto", ...Object.keys(PROVIDERS)];
+
+/** Normalizes a client's provider choice; unknown values become "auto". */
+export function parseChoice(value) {
+  return PROVIDER_CHOICES.includes(value) ? value : "auto";
+}
+
+/** Public, key-free description of the configured providers. */
+export function publicProviderList(env = process.env) {
+  return configuredProviders(env).map(({ name, label, tagline, description, model }) => ({
+    id: name,
+    label,
+    tagline,
+    description,
+    model,
+  }));
+}
+
 /**
  * Providers that have an API key configured, in priority order.
  * Order can be overridden with LLM_PROVIDERS="gemini,groq".
  */
-export function configuredProviders(env = process.env) {
+export function configuredProviders(env = process.env, choice = "auto") {
   const order = (env.LLM_PROVIDERS || DEFAULT_ORDER.join(","))
     .split(",")
     .map((s) => s.trim().toLowerCase())
@@ -36,11 +58,14 @@ export function configuredProviders(env = process.env) {
 
   return order
     .filter((name) => env[PROVIDERS[name].keyVar]?.trim())
+    .filter((name) => choice === "auto" || name === choice)
     .map((name) => {
       const p = PROVIDERS[name];
       return {
         name,
         label: p.label,
+        tagline: p.tagline,
+        description: p.description,
         apiKey: env[p.keyVar].trim(),
         model: env[p.modelVar]?.trim() || p.defaultModel,
         timeoutMs: p.timeoutMs,
