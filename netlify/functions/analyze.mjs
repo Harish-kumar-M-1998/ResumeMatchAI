@@ -2,7 +2,14 @@
 // The Gemini API key is read ONLY here, from process.env. It never reaches the browser.
 
 const DEFAULT_MODEL = "gemini-flash-latest";
-const LLM_TIMEOUT_MS = 25_000;
+// Netlify kills synchronous functions after ~26–30s; keep well under that so we
+// can still return a clean JSON error.
+const LLM_TIMEOUT_MS = 20_000;
+
+// Newer Gemini models "think" before answering, which can take 30s+. We ask for
+// minimal thinking. Gemini 3+ uses thinkingLevel, 2.5 uses thinkingBudget; if a
+// model rejects one form we fall back to the next, ending with no thinkingConfig.
+const THINKING_VARIANTS = [{ thinkingLevel: "low" }, { thinkingBudget: 0 }, null];
 
 const LIMITS = {
   resume: { min: 200, max: 15_000 },
@@ -175,52 +182,74 @@ function normalizeReport(raw) {
   };
 }
 
-async function callGemini(prompt, apiKey, model) {
+async function requestGemini(prompt, apiKey, model, thinkingConfig, signal) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
     model
   )}:generateContent`;
 
+  const generationConfig = {
+    temperature: 0.3,
+    responseMimeType: "application/json",
+    maxOutputTokens: 8192,
+  };
+  if (thinkingConfig) generationConfig.thinkingConfig = thinkingConfig;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-goog-api-key": apiKey, // header, not query string, so it never shows in URL logs
+    },
+    body: JSON.stringify({
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      generationConfig,
+    }),
+    signal,
+  });
+
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    const err = new Error(`Gemini HTTP ${res.status}`);
+    err.status = res.status;
+    err.detail = detail.slice(0, 500);
+    throw err;
+  }
+
+  const data = await res.json();
+  const candidate = data?.candidates?.[0];
+  const text =
+    candidate?.content?.parts
+      ?.filter((p) => !p.thought)
+      .map((p) => p.text || "")
+      .join("") || "";
+  if (!text) {
+    const err = new Error(
+      `Empty Gemini response (finishReason=${candidate?.finishReason || "unknown"}, block=${
+        data?.promptFeedback?.blockReason || "none"
+      })`
+    );
+    err.status = 502;
+    throw err;
+  }
+  return text;
+}
+
+async function callGemini(prompt, apiKey, model) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS);
-
   try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-goog-api-key": apiKey, // header, not query string, so it never shows in URL logs
-      },
-      body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.3,
-          responseMimeType: "application/json",
-        },
-      }),
-      signal: controller.signal,
-    });
-
-    if (!res.ok) {
-      const detail = await res.text().catch(() => "");
-      const err = new Error(`Gemini HTTP ${res.status}`);
-      err.status = res.status;
-      err.detail = detail.slice(0, 500);
-      throw err;
+    let lastErr;
+    for (const thinking of THINKING_VARIANTS) {
+      try {
+        return await requestGemini(prompt, apiKey, model, thinking, controller.signal);
+      } catch (err) {
+        lastErr = err;
+        const thinkingRejected = err.status === 400 && /thinking/i.test(err.detail || "");
+        if (!thinkingRejected) throw err;
+        console.error(`[analyze] ${model} rejected thinkingConfig ${JSON.stringify(thinking)}, retrying`);
+      }
     }
-
-    const data = await res.json();
-    const candidate = data?.candidates?.[0];
-    const text = candidate?.content?.parts?.map((p) => p.text || "").join("") || "";
-    if (!text) {
-      const err = new Error(
-        `Empty Gemini response (finishReason=${candidate?.finishReason || "unknown"}, block=${
-          data?.promptFeedback?.blockReason || "none"
-        })`
-      );
-      err.status = 502;
-      throw err;
-    }
-    return text;
+    throw lastErr;
   } finally {
     clearTimeout(timer);
   }

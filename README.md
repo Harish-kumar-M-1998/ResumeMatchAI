@@ -141,7 +141,7 @@ Open **http://localhost:8888**.
 - **Rate limiting:** 10 requests per IP per 10 minutes, with a friendly 429. This runs in memory, so it is best-effort only: counters reset on cold starts and aren't shared between instances.
 - **Prompt-injection handling:** The resume and job description are wrapped in delimiters, delimiter sequences in user text are stripped, and the prompt tells the model to treat both strictly as data and ignore instructions inside them. The output is parsed as JSON, checked against the expected shape (with safe defaults for anything missing) and scores are clamped to 0–100, so a manipulated response can't break the UI.
 - **Safe errors:** Clients only get clean JSON error messages, never stack traces or upstream details. Full errors are logged server-side with `console.error`.
-- **Timeouts:** The Gemini call is aborted after 25 seconds and the client gives up after 40 seconds.
+- **Timeouts:** The Gemini call is aborted after 20 seconds and the client gives up after 40 seconds.
 - **Privacy:** Nothing is stored. Data goes to Gemini for analysis only.
 
 ## 🛣️ Future improvements
