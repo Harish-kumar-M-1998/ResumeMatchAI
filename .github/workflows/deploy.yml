@@ -1,4 +1,4 @@
-name: Build & Deploy to Netlify
+name: Test, Build & Deploy
 
 on:
   push:
@@ -37,21 +37,38 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Test
+        run: npm test
+
       - name: Build
         run: npm run build
 
+      # Deploy steps run only when the Netlify secrets exist. If Netlify itself
+      # builds from Git (the "Import from Git" setup), leave the secrets unset and
+      # this workflow acts as a test/build check only.
+      - name: Check deploy credentials
+        id: creds
+        run: |
+          if [ -n "$NETLIFY_AUTH_TOKEN" ] && [ -n "$NETLIFY_SITE_ID" ]; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+            echo "Netlify secrets not set — skipping deploy (tests and build passed)." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - name: Install Netlify CLI
+        if: steps.creds.outputs.deploy == 'true'
         run: npm install -g netlify-cli@17
 
       - name: Deploy to production
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: steps.creds.outputs.deploy == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           netlify deploy --prod --dir=dist --functions=netlify/functions \
             --message "Production: ${{ github.sha }}"
 
       - name: Deploy draft preview (PR)
         id: preview
-        if: github.event_name == 'pull_request'
+        if: steps.creds.outputs.deploy == 'true' && github.event_name == 'pull_request'
         run: |
           netlify deploy --dir=dist --functions=netlify/functions \
             --alias "pr-${{ github.event.number }}" \
@@ -63,7 +80,7 @@ jobs:
           echo "### 🔎 Preview deploy: $URL" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Comment preview URL on PR
-        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        if: steps.preview.outputs.url != '' && github.event.pull_request.head.repo.full_name == github.repository
         uses: actions/github-script@v7
         with:
           script: |
