@@ -301,6 +301,20 @@ export default async function handler(req, context) {
         "LLM_BUSY"
       );
     }
+    if (err.status === 400 || err.status === 401 || err.status === 403) {
+      return errorResponse(
+        502,
+        "The AI service rejected the server's credentials. If you own this site, check that GEMINI_API_KEY in Netlify is a valid Gemini API key, then redeploy.",
+        "LLM_AUTH"
+      );
+    }
+    if (err.status === 404) {
+      return errorResponse(
+        502,
+        `The AI model "${model}" was not found. If you own this site, fix or remove GEMINI_MODEL in Netlify, then redeploy.`,
+        "LLM_MODEL_NOT_FOUND"
+      );
+    }
     return errorResponse(502, "The AI service returned an error. Please try again shortly.", "LLM_ERROR");
   }
 
