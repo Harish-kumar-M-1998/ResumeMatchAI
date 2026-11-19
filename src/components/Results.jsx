@@ -15,16 +15,27 @@ const Placeholder = ({ label }) => (
 );
 
 /** Renders a full or partial (still streaming) report. */
-const Results = forwardRef(function Results({ report, streaming, onReset, resume, jobDescription }, ref) {
+const Results = forwardRef(function Results(
+  { report, streaming, meta, providerLabel = (id) => id, onReset, resume, jobDescription, provider = "auto" },
+  ref
+) {
   const hasKeywords = report.matched_keywords.length > 0 || report.missing_keywords.length > 0;
 
   return (
     <section className="results" ref={ref} tabIndex={-1} aria-labelledby="results-title" aria-busy={streaming}>
       <div className="results__head">
-        <h2 id="results-title">
-          Your match report
-          {streaming && <span className="live-pill">Writing…</span>}
-        </h2>
+        <div>
+          <h2 id="results-title">
+            Your match report
+            {streaming && <span className="live-pill">Writing…</span>}
+          </h2>
+          {meta?.provider && (
+            <p className="answered-by">
+              Analyzed by <strong>{providerLabel(meta.provider)}</strong>
+              {meta.model && <code>{meta.model}</code>}
+            </p>
+          )}
+        </div>
         {!streaming && <ReportActions report={report} onReset={onReset} />}
       </div>
 
@@ -62,7 +73,7 @@ const Results = forwardRef(function Results({ report, streaming, onReset, resume
 
       {!streaming && (
         <>
-          <CoverLetter resume={resume} jobDescription={jobDescription} />
+          <CoverLetter resume={resume} jobDescription={jobDescription} provider={provider} />
           <div className="results__foot no-print">
             <button type="button" className="btn btn--primary" onClick={onReset}>
               Start over

@@ -9,7 +9,7 @@ const TONES = [
   { value: "concise", label: "Concise" },
 ];
 
-export default function CoverLetter({ resume, jobDescription }) {
+export default function CoverLetter({ resume, jobDescription, provider = "auto" }) {
   const [tone, setTone] = useState("professional");
   const [letter, setLetter] = useState("");
   const [status, setStatus] = useState("idle"); // idle | loading | done | error
@@ -26,7 +26,8 @@ export default function CoverLetter({ resume, jobDescription }) {
     setError("");
     setLetter("");
     try {
-      const final = await generateCoverLetter(resume, jobDescription, tone, {
+      const { letter: final } = await generateCoverLetter(resume, jobDescription, tone, {
+        provider,
         signal: controller.signal,
         onDelta: setLetter,
         onReset: () => setLetter(""),

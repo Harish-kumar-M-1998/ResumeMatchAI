@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import InputPanel from "./components/InputPanel.jsx";
+import ModelPicker from "./components/ModelPicker.jsx";
 import Results from "./components/Results.jsx";
-import { analyzeResume } from "./lib/api.js";
+import { analyzeResume, fetchProviders } from "./lib/api.js";
 import { parsePartialJson } from "./lib/partialJson.js";
 import { toViewReport } from "./lib/report.js";
 import { SAMPLE_RESUME, SAMPLE_JD } from "./lib/sample.js";
@@ -9,8 +10,25 @@ import { SAMPLE_RESUME, SAMPLE_JD } from "./lib/sample.js";
 const RESUME_LIMITS = { min: 200, max: 15000 };
 const JD_LIMITS = { min: 100, max: 10000 };
 const STATUS_MESSAGES = ["Reading your resume…", "Comparing with the job…", "Checking ATS rules…"];
+const PROVIDER_STORAGE_KEY = "resumematch:provider";
 
 const prefersReducedMotion = () => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+function loadProviderChoice() {
+  try {
+    return localStorage.getItem(PROVIDER_STORAGE_KEY) || "auto";
+  } catch {
+    return "auto";
+  }
+}
+
+function saveProviderChoice(value) {
+  try {
+    localStorage.setItem(PROVIDER_STORAGE_KEY, value);
+  } catch {
+    // Storage unavailable (private mode etc.) — choice just won't persist.
+  }
+}
 
 export default function App() {
   const [resume, setResume] = useState("");
@@ -19,8 +37,10 @@ export default function App() {
   const [statusIdx, setStatusIdx] = useState(0);
   const [error, setError] = useState("");
   const [report, setReport] = useState(null); // full or partial, shaped by toViewReport
-  const [streaming, setStreaming] = useState(false);
+  const [meta, setMeta] = useState(null); // { provider, model } that produced the report
   const [analyzed, setAnalyzed] = useState(null); // { resume, jd } the report was made from
+  const [providers, setProviders] = useState([]);
+  const [provider, setProvider] = useState(loadProviderChoice);
   const [formKey, setFormKey] = useState(0);
   const resultsRef = useRef(null);
   const abortRef = useRef(null);
@@ -32,6 +52,20 @@ export default function App() {
   const resumeOk = rLen >= RESUME_LIMITS.min && rLen <= RESUME_LIMITS.max;
   const jdOk = jLen >= JD_LIMITS.min && jLen <= JD_LIMITS.max;
   const canSubmit = resumeOk && jdOk && !loading;
+  const split = Boolean(report);
+
+  useEffect(() => {
+    let alive = true;
+    fetchProviders().then((list) => {
+      if (!alive) return;
+      setProviders(list);
+      // Drop a remembered choice the server no longer offers.
+      setProvider((current) => (current === "auto" || list.some((p) => p.id === current) ? current : "auto"));
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!loading) return;
@@ -50,6 +84,11 @@ export default function App() {
     }
   }, [report]);
 
+  function chooseProvider(value) {
+    setProvider(value);
+    saveProviderChoice(value);
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     if (!canSubmit) return;
@@ -61,6 +100,7 @@ export default function App() {
     setLoading(true);
     setError("");
     setReport(null);
+    setMeta(null);
     setAnalyzed(null);
     scrolledRef.current = false;
 
@@ -70,14 +110,12 @@ export default function App() {
     const flush = () => {
       scheduled = null;
       const partial = parsePartialJson(latest);
-      if (partial && Object.keys(partial).length) {
-        setStreaming(true);
-        setReport(toViewReport(partial));
-      }
+      if (partial && Object.keys(partial).length) setReport(toViewReport(partial));
     };
 
     try {
-      const data = await analyzeResume(input.resume, input.jd, {
+      const result = await analyzeResume(input.resume, input.jd, {
+        provider,
         signal: controller.signal,
         onDelta: (text) => {
           latest = text;
@@ -91,7 +129,8 @@ export default function App() {
         },
       });
       clearTimeout(scheduled);
-      setReport(toViewReport(data));
+      setReport(toViewReport(result.report));
+      setMeta({ provider: result.provider, model: result.model });
       setAnalyzed(input);
     } catch (err) {
       clearTimeout(scheduled);
@@ -99,21 +138,18 @@ export default function App() {
       setReport(null);
       setError(err.message || "Something went wrong. Please try again.");
     } finally {
-      if (abortRef.current === controller) {
-        setLoading(false);
-        setStreaming(false);
-      }
+      if (abortRef.current === controller) setLoading(false);
     }
   }
 
   function handleReset() {
     abortRef.current?.abort();
     setLoading(false);
-    setStreaming(false);
     setResume("");
     setJd("");
     setError("");
     setReport(null);
+    setMeta(null);
     setAnalyzed(null);
     setFormKey((k) => k + 1);
     topRef.current?.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth" });
@@ -136,13 +172,21 @@ export default function App() {
         : `Add the job description (at least ${JD_LIMITS.min} characters).`
       : "";
 
+  const providerLabel = (id) => providers.find((p) => p.id === id)?.label || id;
+
   return (
     <div className="app" ref={topRef}>
+      <div className="backdrop" aria-hidden="true">
+        <span className="blob blob--1" />
+        <span className="blob blob--2" />
+        <span className="blob blob--3" />
+      </div>
+
       <a className="skip-link" href="#main">Skip to content</a>
       <header className="site-header">
-        <div className="wrap site-header__inner">
+        <div className="wrap site-header__inner glass">
           <div className="brand">
-            <img src="/favicon.svg" alt="" width="36" height="36" />
+            <img src="/favicon.svg" alt="" width="34" height="34" />
             <span className="brand__name">
               ResumeMatch <em>AI</em>
             </span>
@@ -151,18 +195,34 @@ export default function App() {
         </div>
       </header>
 
-      <main id="main" className="wrap">
-        <section className="hero">
-          <h1>
-            How well does your resume <span className="hl">fit this job?</span>
-          </h1>
-          <p className="lede">
-            Paste your resume and a job description. Get a match score, ATS check, missing keywords,
-            rewritten bullets and a tailored cover letter — streamed live as the AI writes.
-          </p>
-        </section>
+      <main id="main" className={`wrap workspace ${split ? "is-split" : ""}`}>
+        {!split && (
+          <section className="hero">
+            <p className="eyebrow">Free · No sign-up · Nothing stored</p>
+            <h1>
+              How well does your resume <span className="hl">fit this job?</span>
+            </h1>
+            <p className="lede">
+              Paste your resume and a job description. Get a match score, ATS check, missing keywords, rewritten
+              bullets and a tailored cover letter — streamed live as the AI writes.
+            </p>
+          </section>
+        )}
 
-        <form onSubmit={handleSubmit} className="form" aria-busy={loading} key={formKey}>
+        <form
+          onSubmit={handleSubmit}
+          className="form workspace__inputs"
+          aria-busy={loading}
+          aria-label="Resume and job description"
+          key={formKey}
+        >
+          {split && (
+            <div className="workspace__inputs-head">
+              <h2>Your inputs</h2>
+              <p className="muted small">Edit and re-analyze any time.</p>
+            </div>
+          )}
+
           <div className="panels">
             <InputPanel
               id="resume"
@@ -189,26 +249,32 @@ export default function App() {
             />
           </div>
 
+          <ModelPicker providers={providers} value={provider} onChange={chooseProvider} disabled={loading} />
+
           <div className="actions">
             <button type="submit" className="btn btn--primary btn--lg" disabled={!canSubmit} aria-describedby="submit-hint">
               {loading ? (
                 <>
                   <span className="spinner" aria-hidden="true" /> Analyzing…
                 </>
+              ) : split ? (
+                "Re-analyze"
               ) : (
                 "Analyze match"
               )}
             </button>
-            <button type="button" className="btn btn--ghost" onClick={fillSample} disabled={loading}>
-              Try with sample data
-            </button>
+            {!split && (
+              <button type="button" className="btn btn--ghost" onClick={fillSample} disabled={loading}>
+                Try with sample data
+              </button>
+            )}
             <p id="submit-hint" className="actions__hint">
               {!loading && disabledReason}
             </p>
           </div>
 
-          {loading && !streaming && (
-            <div className="loading" role="status" aria-live="polite">
+          {loading && !report && (
+            <div className="loading glass" role="status" aria-live="polite">
               <div className="loading__bar" aria-hidden="true">
                 <span />
               </div>
@@ -221,6 +287,12 @@ export default function App() {
           {error && (
             <div className="alert" role="alert">
               <strong>Analysis failed.</strong> {error}
+              {provider !== "auto" && (
+                <>
+                  {" "}
+                  You picked {providerLabel(provider)} — try <strong>Auto</strong> so another model can take over.
+                </>
+              )}
             </div>
           )}
         </form>
@@ -230,9 +302,12 @@ export default function App() {
             ref={resultsRef}
             report={report}
             streaming={loading}
+            meta={meta}
+            providerLabel={providerLabel}
             onReset={handleReset}
             resume={analyzed?.resume || ""}
             jobDescription={analyzed?.jd || ""}
+            provider={provider}
           />
         )}
       </main>

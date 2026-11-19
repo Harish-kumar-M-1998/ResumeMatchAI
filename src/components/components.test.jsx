@@ -82,3 +82,27 @@ describe("Results", () => {
     expect(onReset).toHaveBeenCalled();
   });
 });
+
+import ModelPicker from "./ModelPicker.jsx";
+
+describe("ModelPicker", () => {
+  const providers = [
+    { id: "groq", label: "Groq", tagline: "Fastest", description: "Fast.", model: "llama" },
+    { id: "gemini", label: "Gemini", tagline: "Google", description: "Detailed.", model: "flash" },
+  ];
+
+  it("offers Auto plus each configured provider, with model info", () => {
+    const onChange = vi.fn();
+    render(<ModelPicker providers={providers} value="auto" onChange={onChange} />);
+    expect(screen.getAllByRole("radio")).toHaveLength(3);
+    expect(screen.getByRole("radio", { name: /auto/i }).checked).toBe(true);
+    expect(screen.getByText("llama")).toBeTruthy();
+    fireEvent.click(screen.getByRole("radio", { name: /gemini/i }));
+    expect(onChange).toHaveBeenCalledWith("gemini");
+  });
+
+  it("shows just Auto when the provider list is unavailable", () => {
+    render(<ModelPicker providers={[]} value="auto" onChange={() => {}} />);
+    expect(screen.getAllByRole("radio")).toHaveLength(1);
+  });
+});

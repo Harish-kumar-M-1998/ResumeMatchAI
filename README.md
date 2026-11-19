@@ -21,7 +21,9 @@
 - **Cover letter generator:** a tailored first draft in a professional, enthusiastic or concise tone, with Copy and Download
 - **Export:** download the report as Markdown, or save it as a PDF from the browser's print dialog
 - **Copy all missing keywords** with one click (critical ones first)
-- **Multiple LLM providers:** Groq is tried first and Gemini is the automatic fallback
+- **Choose your AI:** *Auto* (Groq first, Gemini fallback) or pin one model. Each option explains its trade-offs, and the report shows which model answered
+- **Split-view workspace:** after analysis, inputs dock on the left (edit and re-analyze) while the report scrolls on the right
+- **Glassmorphism UI:** frosted surfaces over a soft gradient. Solid surfaces when the system asks for reduced transparency
 - **PDF upload:** text is extracted in the browser with pdfjs-dist. Scanned or image-only PDFs are detected and reported.
 - Live character counters, validation, rotating loading messages and a **Try with sample data** button
 - Light and dark mode, responsive down to 360px, keyboard accessible, and respects `prefers-reduced-motion`

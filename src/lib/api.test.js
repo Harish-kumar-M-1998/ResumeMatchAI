@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { analyzeResume, generateCoverLetter } from "./api.js";
+import { analyzeResume, fetchProviders, generateCoverLetter } from "./api.js";
 
 function ndjson(events, { split = 7 } = {}) {
   // Deliberately split lines across chunks to test buffering.
@@ -35,8 +35,8 @@ describe("analyzeResume", () => {
     const deltas = [];
     const onReset = vi.fn();
     const onStatus = vi.fn();
-    const report = await analyzeResume("r", "j", { onDelta: (t) => deltas.push(t), onReset, onStatus });
-    expect(report).toEqual({ match_score: 5 });
+    const out = await analyzeResume("r", "j", { onDelta: (t) => deltas.push(t), onReset, onStatus });
+    expect(out).toEqual({ report: { match_score: 5 }, provider: "gemini", model: undefined });
     expect(deltas).toEqual(["{bad", '{"match_', '{"match_score":5}']);
     expect(onReset).toHaveBeenCalledOnce();
     expect(onStatus.mock.calls.map((c) => c[0])).toEqual(["groq", "gemini"]);
@@ -82,12 +82,27 @@ describe("analyzeResume", () => {
 });
 
 describe("generateCoverLetter", () => {
-  it("posts the tone and resolves with the letter", async () => {
-    const fetchMock = vi.fn(async () => ndjson([{ type: "result", letter: "Dear team" }]));
+  it("posts the tone and provider and resolves with the letter", async () => {
+    const fetchMock = vi.fn(async () => ndjson([{ type: "result", letter: "Dear team", provider: "groq", model: "m" }]));
     vi.stubGlobal("fetch", fetchMock);
-    await expect(generateCoverLetter("r", "j", "concise")).resolves.toBe("Dear team");
+    await expect(generateCoverLetter("r", "j", "concise", { provider: "groq" })).resolves.toEqual({
+      letter: "Dear team",
+      provider: "groq",
+      model: "m",
+    });
     const [url, init] = fetchMock.mock.calls[0];
     expect(url).toBe("/.netlify/functions/cover-letter");
-    expect(JSON.parse(init.body)).toEqual({ resume: "r", jobDescription: "j", tone: "concise" });
+    expect(JSON.parse(init.body)).toEqual({ resume: "r", jobDescription: "j", tone: "concise", provider: "groq" });
+  });
+});
+
+describe("fetchProviders", () => {
+  it("returns the list, or [] on any failure", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ providers: [{ id: "groq" }] }))));
+    await expect(fetchProviders()).resolves.toEqual([{ id: "groq" }]);
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("<html>", { status: 404 })));
+    await expect(fetchProviders()).resolves.toEqual([]);
+    vi.stubGlobal("fetch", vi.fn(async () => Promise.reject(new TypeError("offline"))));
+    await expect(fetchProviders()).resolves.toEqual([]);
   });
 });

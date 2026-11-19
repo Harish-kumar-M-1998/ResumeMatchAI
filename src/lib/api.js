@@ -122,18 +122,40 @@ function toNetworkError(err, controller) {
   return new ApiError("Couldn't reach the server. Check your internet connection and try again.", "NETWORK");
 }
 
-export async function analyzeResume(resume, jobDescription, handlers) {
-  const event = await streamFunction("/.netlify/functions/analyze", { resume, jobDescription }, handlers);
+/** Resolves with { report, provider, model }. */
+export async function analyzeResume(resume, jobDescription, { provider = "auto", ...handlers } = {}) {
+  const event = await streamFunction(
+    "/.netlify/functions/analyze",
+    { resume, jobDescription, provider },
+    handlers
+  );
   if (!event.report || typeof event.report.match_score !== "number") {
     throw new ApiError("The server returned an unexpected response. Please try again.", "BAD_RESPONSE");
   }
-  return event.report;
+  return { report: event.report, provider: event.provider, model: event.model };
 }
 
-export async function generateCoverLetter(resume, jobDescription, tone, handlers) {
-  const event = await streamFunction("/.netlify/functions/cover-letter", { resume, jobDescription, tone }, handlers);
+/** Resolves with { letter, provider, model }. */
+export async function generateCoverLetter(resume, jobDescription, tone, { provider = "auto", ...handlers } = {}) {
+  const event = await streamFunction(
+    "/.netlify/functions/cover-letter",
+    { resume, jobDescription, tone, provider },
+    handlers
+  );
   if (typeof event.letter !== "string") {
     throw new ApiError("The server returned an unexpected response. Please try again.", "BAD_RESPONSE");
   }
-  return event.letter;
+  return { letter: event.letter, provider: event.provider, model: event.model };
+}
+
+/** Lists the AI providers the server has keys for. Never throws. */
+export async function fetchProviders() {
+  try {
+    const res = await fetch("/.netlify/functions/providers");
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data?.providers) ? data.providers : [];
+  } catch {
+    return [];
+  }
 }

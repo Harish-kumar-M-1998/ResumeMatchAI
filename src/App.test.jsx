@@ -63,6 +63,9 @@ describe("App", () => {
     expect(await screen.findByText("Promising junior fit.")).toBeTruthy();
     expect(screen.getByText("TypeScript")).toBeTruthy();
     expect(screen.getByRole("img", { name: /ATS compatibility: 77/ })).toBeTruthy();
+    // Split view: inputs stay editable with a Re-analyze button.
+    expect(screen.getByRole("button", { name: "Re-analyze" })).toBeTruthy();
+    expect(document.querySelector(".workspace.is-split")).toBeTruthy();
 
     fireEvent.click(screen.getAllByRole("button", { name: "Start over" })[0]);
     await waitFor(() => expect(screen.queryByText("Promising junior fit.")).toBeNull());
