@@ -2,7 +2,7 @@
 
 **Paste your resume and a job description to get an AI-generated match report (scores, missing keywords, an ATS check, rewritten bullets) plus a tailored cover letter, streamed live as the AI writes.**
 
-🔗 **Live demo:** https://reumematchai.netlify.app
+🔗 **Live demo:** https://resume-matchai.netlify.app
 
 ![ResumeMatch AI screenshot](docs/screenshot.png)
 <!-- Add a screenshot or GIF at docs/screenshot.png -->
