@@ -4,39 +4,72 @@ import KeywordChips from "./KeywordChips.jsx";
 import SectionFeedback from "./SectionFeedback.jsx";
 import BulletRewrites from "./BulletRewrites.jsx";
 import Suggestions from "./Suggestions.jsx";
+import ReportActions from "./ReportActions.jsx";
+import CoverLetter from "./CoverLetter.jsx";
 
-const Results = forwardRef(function Results({ report, onReset }, ref) {
+const Placeholder = ({ label }) => (
+  <div className="score-ring score-ring--pending" aria-hidden="true">
+    <div className="score-ring__dial skeleton-ring" />
+    <span className="score-ring__label">{label}</span>
+  </div>
+);
+
+/** Renders a full or partial (still streaming) report. */
+const Results = forwardRef(function Results({ report, streaming, onReset, resume, jobDescription }, ref) {
+  const hasKeywords = report.matched_keywords.length > 0 || report.missing_keywords.length > 0;
+
   return (
-    <section className="results" ref={ref} tabIndex={-1} aria-labelledby="results-title">
+    <section className="results" ref={ref} tabIndex={-1} aria-labelledby="results-title" aria-busy={streaming}>
       <div className="results__head">
-        <h2 id="results-title">Your match report</h2>
-        <button type="button" className="btn btn--ghost" onClick={onReset}>
-          Start over
-        </button>
+        <h2 id="results-title">
+          Your match report
+          {streaming && <span className="live-pill">Writing…</span>}
+        </h2>
+        {!streaming && <ReportActions report={report} onReset={onReset} />}
       </div>
 
       <div className="card scores">
         <div className="scores__rings">
-          <ScoreRing score={report.match_score} label="Job match" caption="How well you fit this role" />
-          <ScoreRing score={report.ats_score} label="ATS compatibility" caption="How well software can parse you" />
+          {report.match_score !== null ? (
+            <ScoreRing score={report.match_score} label="Job match" caption="How well you fit this role" />
+          ) : (
+            <Placeholder label="Job match" />
+          )}
+          {report.ats_score !== null ? (
+            <ScoreRing score={report.ats_score} label="ATS compatibility" caption="How well software can parse you" />
+          ) : (
+            <Placeholder label="ATS compatibility" />
+          )}
         </div>
-        <p className="verdict">{report.verdict}</p>
+        {report.verdict && <p className="verdict">{report.verdict}</p>}
       </div>
 
-      <KeywordChips matched={report.matched_keywords} missing={report.missing_keywords} />
-      <Suggestions
-        suggestions={report.top_suggestions}
-        redFlags={report.red_flags}
-        atsIssues={report.ats_issues}
-      />
+      {(hasKeywords || !streaming) && (
+        <KeywordChips matched={report.matched_keywords} missing={report.missing_keywords} />
+      )}
+
+      {(!streaming || report.top_suggestions.length > 0 || report.ats_issues.length > 0) && (
+        <Suggestions
+          suggestions={report.top_suggestions}
+          redFlags={report.red_flags}
+          atsIssues={report.ats_issues}
+          streaming={streaming}
+        />
+      )}
+
       <BulletRewrites rewrites={report.bullet_rewrites} />
       <SectionFeedback feedback={report.section_feedback} />
 
-      <div className="results__foot">
-        <button type="button" className="btn btn--primary" onClick={onReset}>
-          Start over
-        </button>
-      </div>
+      {!streaming && (
+        <>
+          <CoverLetter resume={resume} jobDescription={jobDescription} />
+          <div className="results__foot no-print">
+            <button type="button" className="btn btn--primary" onClick={onReset}>
+              Start over
+            </button>
+          </div>
+        </>
+      )}
     </section>
   );
 });

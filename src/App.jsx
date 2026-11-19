@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import InputPanel from "./components/InputPanel.jsx";
 import Results from "./components/Results.jsx";
 import { analyzeResume } from "./lib/api.js";
+import { parsePartialJson } from "./lib/partialJson.js";
+import { toViewReport } from "./lib/report.js";
 import { SAMPLE_RESUME, SAMPLE_JD } from "./lib/sample.js";
 
 const RESUME_LIMITS = { min: 200, max: 15000 };
@@ -16,9 +18,13 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [statusIdx, setStatusIdx] = useState(0);
   const [error, setError] = useState("");
-  const [report, setReport] = useState(null);
+  const [report, setReport] = useState(null); // full or partial, shaped by toViewReport
+  const [streaming, setStreaming] = useState(false);
+  const [analyzed, setAnalyzed] = useState(null); // { resume, jd } the report was made from
   const [formKey, setFormKey] = useState(0);
   const resultsRef = useRef(null);
+  const abortRef = useRef(null);
+  const scrolledRef = useRef(false);
   const topRef = useRef(null);
 
   const rLen = resume.trim().length;
@@ -34,8 +40,11 @@ export default function App() {
     return () => clearInterval(id);
   }, [loading]);
 
+  useEffect(() => () => abortRef.current?.abort(), []);
+
   useEffect(() => {
-    if (report && resultsRef.current) {
+    if (report && resultsRef.current && !scrolledRef.current) {
+      scrolledRef.current = true;
       resultsRef.current.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "start" });
       resultsRef.current.focus({ preventScroll: true });
     }
@@ -44,24 +53,68 @@ export default function App() {
   async function handleSubmit(e) {
     e.preventDefault();
     if (!canSubmit) return;
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    const input = { resume: resume.trim(), jd: jd.trim() };
     setLoading(true);
     setError("");
     setReport(null);
+    setAnalyzed(null);
+    scrolledRef.current = false;
+
+    // Re-parse the growing JSON at most ~10x per second.
+    let latest = "";
+    let scheduled = null;
+    const flush = () => {
+      scheduled = null;
+      const partial = parsePartialJson(latest);
+      if (partial && Object.keys(partial).length) {
+        setStreaming(true);
+        setReport(toViewReport(partial));
+      }
+    };
+
     try {
-      const data = await analyzeResume(resume.trim(), jd.trim());
-      setReport(data);
+      const data = await analyzeResume(input.resume, input.jd, {
+        signal: controller.signal,
+        onDelta: (text) => {
+          latest = text;
+          if (!scheduled) scheduled = setTimeout(flush, 100);
+        },
+        onReset: () => {
+          latest = "";
+          clearTimeout(scheduled);
+          scheduled = null;
+          setReport(null);
+        },
+      });
+      clearTimeout(scheduled);
+      setReport(toViewReport(data));
+      setAnalyzed(input);
     } catch (err) {
+      clearTimeout(scheduled);
+      if (err.code === "CANCELLED") return;
+      setReport(null);
       setError(err.message || "Something went wrong. Please try again.");
     } finally {
-      setLoading(false);
+      if (abortRef.current === controller) {
+        setLoading(false);
+        setStreaming(false);
+      }
     }
   }
 
   function handleReset() {
+    abortRef.current?.abort();
+    setLoading(false);
+    setStreaming(false);
     setResume("");
     setJd("");
     setError("");
     setReport(null);
+    setAnalyzed(null);
     setFormKey((k) => k + 1);
     topRef.current?.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth" });
     setTimeout(() => document.getElementById("resume")?.focus({ preventScroll: true }), 300);
@@ -104,8 +157,8 @@ export default function App() {
             How well does your resume <span className="hl">fit this job?</span>
           </h1>
           <p className="lede">
-            Paste your resume and a job description. Get a match score, ATS check, missing keywords and
-            rewritten bullets in about 15 seconds.
+            Paste your resume and a job description. Get a match score, ATS check, missing keywords,
+            rewritten bullets and a tailored cover letter — streamed live as the AI writes.
           </p>
         </section>
 
@@ -154,7 +207,7 @@ export default function App() {
             </p>
           </div>
 
-          {loading && (
+          {loading && !streaming && (
             <div className="loading" role="status" aria-live="polite">
               <div className="loading__bar" aria-hidden="true">
                 <span />
@@ -172,7 +225,16 @@ export default function App() {
           )}
         </form>
 
-        {report && <Results ref={resultsRef} report={report} onReset={handleReset} />}
+        {report && (
+          <Results
+            ref={resultsRef}
+            report={report}
+            streaming={loading}
+            onReset={handleReset}
+            resume={analyzed?.resume || ""}
+            jobDescription={analyzed?.jd || ""}
+          />
+        )}
       </main>
 
       <footer className="site-footer">

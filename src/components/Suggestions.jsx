@@ -1,4 +1,6 @@
-export default function Suggestions({ suggestions, redFlags, atsIssues }) {
+export default function Suggestions({ suggestions, redFlags, atsIssues, streaming = false }) {
+  const pending = (label) => <p className="muted">{streaming ? "Writing…" : label}</p>;
+
   return (
     <>
       <section className="card" aria-labelledby="sg-title">
@@ -10,7 +12,7 @@ export default function Suggestions({ suggestions, redFlags, atsIssues }) {
             ))}
           </ol>
         ) : (
-          <p className="muted">No further suggestions.</p>
+          pending("No further suggestions.")
         )}
       </section>
 
@@ -26,7 +28,7 @@ export default function Suggestions({ suggestions, redFlags, atsIssues }) {
               ))}
             </ul>
           ) : (
-            <p className="muted">No red flags spotted.</p>
+            pending("No red flags spotted.")
           )}
         </section>
 
@@ -39,7 +41,7 @@ export default function Suggestions({ suggestions, redFlags, atsIssues }) {
               ))}
             </ul>
           ) : (
-            <p className="muted">No ATS formatting issues found.</p>
+            pending("No ATS formatting issues found.")
           )}
         </section>
       </div>

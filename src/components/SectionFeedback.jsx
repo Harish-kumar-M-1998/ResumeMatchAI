@@ -7,11 +7,13 @@ const SECTIONS = [
 ];
 
 export default function SectionFeedback({ feedback }) {
+  const rows = SECTIONS.filter(({ key }) => feedback[key]);
+  if (!rows.length) return null;
   return (
     <section className="card" aria-labelledby="sf-title">
       <h3 id="sf-title" className="card__title">Section-by-section feedback</h3>
       <dl className="sections">
-        {SECTIONS.map(({ key, label }) => (
+        {rows.map(({ key, label }) => (
           <div key={key} className="sections__row">
             <dt>{label}</dt>
             <dd>{feedback[key]}</dd>

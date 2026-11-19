@@ -1,6 +1,10 @@
+import CopyButton from "./CopyButton.jsx";
+
 export default function KeywordChips({ matched, missing }) {
   const critical = missing.filter((k) => k.importance === "critical");
   const nice = missing.filter((k) => k.importance !== "critical");
+  // Critical first, so pasting into a skills section puts the important ones up front.
+  const allMissing = [...critical, ...nice].map((k) => k.keyword).join(", ");
 
   return (
     <section className="card" aria-labelledby="kw-title">
@@ -24,9 +28,14 @@ export default function KeywordChips({ matched, missing }) {
       </div>
 
       <div className="kw-group">
-        <h4 className="kw-group__title">
-          Missing <span className="count">{missing.length}</span>
-        </h4>
+        <div className="kw-group__head">
+          <h4 className="kw-group__title">
+            Missing <span className="count">{missing.length}</span>
+          </h4>
+          {missing.length > 0 && (
+            <CopyButton text={allMissing} label="Copy all" className="no-print" />
+          )}
+        </div>
         {missing.length ? (
           <ul className="chips">
             {critical.map((k) => (
