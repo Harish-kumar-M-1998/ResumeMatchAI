@@ -402,7 +402,7 @@ export default function App() {
             <a href="https://github.com/Harish-kumar-M-1998" target="_blank" rel="noreferrer">
               <Code2 size={15} aria-hidden="true" /> GitHub
             </a>
-            <a href="https://linkedin.com/in/harish-kumar-m" target="_blank" rel="noreferrer">
+            <a href="https://www.linkedin.com/in/harish-kumar-m-871335280/" target="_blank" rel="noreferrer">
               <Briefcase size={15} aria-hidden="true" /> LinkedIn
             </a>
           </nav>

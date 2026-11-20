@@ -185,7 +185,7 @@ Run the tests with `npm test`, or `npm run test:watch` while developing.
 Designed and built by **Harish Kumar M**, Software Engineer (React.js, TypeScript, full stack).
 
 - 📧 Email: [harishmano98@gmail.com](mailto:harishmano98@gmail.com)
-- 💼 LinkedIn: [linkedin.com/in/harish-kumar-m](https://linkedin.com/in/harish-kumar-m)
+- 💼 LinkedIn: [linkedin.com/in/harish-kumar-m-871335280](https://www.linkedin.com/in/harish-kumar-m-871335280/)
 - 🐙 GitHub: [@Harish-kumar-M-1998](https://github.com/Harish-kumar-M-1998)
 
 Open to opportunities. Feel free to reach out.
