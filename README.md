@@ -180,6 +180,16 @@ Run the tests with `npm test`, or `npm run test:watch` while developing.
 - End-to-end browser tests with Playwright
 - Durable rate limiting backed by a database or Redis
 
+## 👋 Author
+
+Designed and built by **Harish Kumar M**, Software Engineer (React.js, TypeScript, full stack).
+
+- 📧 Email: [harishmano98@gmail.com](mailto:harishmano98@gmail.com)
+- 💼 LinkedIn: [linkedin.com/in/harish-kumar-m](https://linkedin.com/in/harish-kumar-m)
+- 🐙 GitHub: [@Harish-kumar-M-1998](https://github.com/Harish-kumar-M-1998)
+
+Open to opportunities. Feel free to reach out.
+
 ## 📄 License
 
-MIT © Harish Kumar
+MIT © Harish Kumar M. If you reuse this code, keep this copyright notice and credit the original author, as the license requires.

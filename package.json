@@ -3,6 +3,11 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "author": "Harish Kumar M <harishmano98@gmail.com> (https://github.com/Harish-kumar-M-1998)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Harish-kumar-M-1998/ResumeMatchAI.git"
+  },
   "license": "MIT",
   "engines": {
     "node": ">=20"

@@ -1425,3 +1425,26 @@ fieldset:disabled .model-option {
     scroll-behavior: auto !important;
   }
 }
+
+/* developer credit */
+.site-footer .credit {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+  align-items: center;
+}
+.credit__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.credit__links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-2);
+  text-decoration: none;
+}
+.credit__links a:hover {
+  color: var(--brand);
+}

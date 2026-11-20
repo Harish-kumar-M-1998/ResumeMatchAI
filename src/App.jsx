@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
-import { Sparkles, Gauge, ScanSearch, PenLine, Mail, ShieldCheck, Code2, ArrowRight, FlaskConical } from "lucide-react";
+import { Sparkles, Gauge, ScanSearch, PenLine, Mail, ShieldCheck, Code2, ArrowRight, FlaskConical, Briefcase } from "lucide-react";
 import InputPanel from "./components/InputPanel.jsx";
 import ModelPicker from "./components/ModelPicker.jsx";
 import Results from "./components/Results.jsx";
@@ -390,6 +390,22 @@ export default function App() {
             Your data is sent to an AI for analysis and is not stored.
           </p>
           <p className="muted small">AI feedback can be wrong — always review suggestions before using them.</p>
+        </div>
+        <div className="wrap credit">
+          <p>
+            Designed &amp; built by <strong>Harish Kumar M</strong> · © {new Date().getFullYear()}
+          </p>
+          <nav className="credit__links" aria-label="Contact the developer">
+            <a href="mailto:harishmano98@gmail.com">
+              <Mail size={15} aria-hidden="true" /> harishmano98@gmail.com
+            </a>
+            <a href="https://github.com/Harish-kumar-M-1998" target="_blank" rel="noreferrer">
+              <Code2 size={15} aria-hidden="true" /> GitHub
+            </a>
+            <a href="https://linkedin.com/in/harish-kumar-m" target="_blank" rel="noreferrer">
+              <Briefcase size={15} aria-hidden="true" /> LinkedIn
+            </a>
+          </nav>
         </div>
       </footer>
     </div>
