@@ -4,6 +4,8 @@
 
 🔗 **Live demo:** https://resume-matchai.netlify.app
 
+🎬 **Video walkthrough:** [Watch the demo](https://docs.google.com/videos/d/1mv5EyDgZp9LWmauau_UZOLGTpM9R12vZuJbBtHjhQ18/play)
+
 ![ResumeMatch AI screenshot](docs/screenshot.png)
 <!-- Add a screenshot or GIF at docs/screenshot.png -->
 
